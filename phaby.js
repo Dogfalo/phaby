@@ -37,14 +37,14 @@ let i = 0;
 let numAttempts = 0;
 const FRAMES = ['-', '\\', '|', '/'];
 
-
+let phabLoop;
 function main() {
     setInterval(() => {
         const frame = FRAMES[i = ++ i % FRAMES.length];
         displayCurrentDiffState(frame)
     }, 80);
     checkAndLand()
-    const phabLoop = setInterval(() => {
+    phabLoop = setInterval(() => {
         checkAndLand()
     }, 10000);
 }
@@ -74,7 +74,6 @@ async function checkAndLand() {
     try {
         const diffStatus = await diffStatusPromise;
         let res = JSON.parse(diffStatus.stdout)
-
         const diff = res.response[0];
         const activePhid = diff.activeDiffPHID;
 
