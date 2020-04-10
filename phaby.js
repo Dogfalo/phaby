@@ -2,6 +2,7 @@ import pkg from './package.json'
 import chalk from 'chalk'
 import updateNotifier from 'update-notifier';
 import notifier from 'node-notifier'
+import logUpdate from 'log-update';
 
 const log = console.log;
 const {program} = require('commander');
@@ -14,9 +15,7 @@ program
     .requiredOption('-d, --diff <diffId>', 'Diff Id')
     .usage("-d 123454")
     .description('Auto-lands the specified diff when it is accepted and builds are passing.')
-
 program.version(`${pkg.version}`)
-
 program.parse(process.argv);
 
 const STATUSES = {
@@ -31,11 +30,41 @@ const BUILDABLE_STATUSES = {
     building: {id: 'building', display: chalk.blue('building')},
 }
 
+const state = {
+    currBuildable: '',
+    currDiff: ''
+}
+let i = 0;
+let numAttempts = 0;
+const FRAMES = ['-', '\\', '|', '/'];
+
+
+function main() {
+    setInterval(() => {
+        const frame = FRAMES[i = ++ i % FRAMES.length];
+        displayCurrentDiffState(frame)
+    }, 80);
+    checkAndLand()
+    const phabLoop = setInterval(() => {
+        checkAndLand()
+    }, 10000);
+}
+
 async function getCurrentBuildInfo(activePhid) {
     const buildable = await exec(`echo '{ "constraints": { "objectPHIDs": ["${activePhid}"] } }' | arc call-conduit harbormaster.buildable.search`);
     let res = JSON.parse(buildable.stdout)
     let buildableStatus = res.response.data[0].fields.buildableStatus.value;
     return buildableStatus;
+}
+
+
+function displayCurrentDiffState(frame) {
+    const {currDiff, currBuildable} = state;
+    if (!currDiff || !currBuildable) {
+        return;
+    }
+
+    logUpdate(`${frame} #${numAttempts}: D${currDiff.id}: ${currDiff.statusName} (${currDiff.status}) | ${BUILDABLE_STATUSES[currBuildable].display}`);
 }
 
 async function checkAndLand() {
@@ -48,14 +77,15 @@ async function checkAndLand() {
         let res = JSON.parse(diffStatus.stdout)
 
         const diff = res.response[0];
-        const activePhid= diff.activeDiffPHID;
+        const activePhid = diff.activeDiffPHID;
 
 
         const buildableStatus = await getCurrentBuildInfo(activePhid);
         const isPassing = buildableStatus === BUILDABLE_STATUSES.passed.id;
 
-
-        console.log(`D${diff.id}: ${diff.statusName} (${diff.status}) | ${BUILDABLE_STATUSES[buildableStatus].display}`);
+        numAttempts++
+        state.currBuildable = buildableStatus;
+        state.currDiff = diff;
 
         if (diff.status === STATUSES.ACCEPTED && isPassing) {
             console.log('Landing');
@@ -79,16 +109,6 @@ async function checkAndLand() {
             process.exit(1);
         }
     }
-
-
-
 }
 
-checkAndLand()
-
-const phabLoop = setInterval(() => {
-    checkAndLand()
-}, 10000);
-
-
-
+main();
