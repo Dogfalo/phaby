@@ -2,6 +2,12 @@
 
 Auto-lands the specified diff when it is accepted and builds are passing.
 
+## Install
+
+```bash
+npm i -g phaby
+```
+
 ## Usage
 ```bash
 phaby -d <Diff Id>
