@@ -4,7 +4,6 @@ import updateNotifier from 'update-notifier';
 import notifier from 'node-notifier'
 import logUpdate from 'log-update';
 
-const log = console.log;
 const {program} = require('commander');
 const {exec} = require('child-process-promise');
 
