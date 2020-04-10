@@ -24,8 +24,18 @@ const STATUSES = {
     CLOSED: 3,
 };
 
-function allBuildablesPassing(buildables) {
-    return Object.values(buildables).every((build) => build.status === 'passed')
+const BUILDABLE_STATUSES = {
+    passed: {id: 'passed', display: chalk.green('Passed')},
+    failed: {id: 'failed', display: chalk.red('Failed')},
+    preparing: {id: 'preparing', display: chalk.blue('preparing')},
+    building: {id: 'building', display: chalk.blue('building')},
+}
+
+async function getCurrentBuildInfo(activePhid) {
+    const buildable = await exec(`echo '{ "constraints": { "objectPHIDs": ["${activePhid}"] } }' | arc call-conduit harbormaster.buildable.search`);
+    let res = JSON.parse(buildable.stdout)
+    let buildableStatus = res.response.data[0].fields.buildableStatus.value;
+    return buildableStatus;
 }
 
 async function checkAndLand() {
@@ -38,10 +48,15 @@ async function checkAndLand() {
         let res = JSON.parse(diffStatus.stdout)
 
         const diff = res.response[0];
-        const buildables = diff.properties.buildables;
-        const isPassing = allBuildablesPassing(buildables);
-        const buildStatus = isPassing ? chalk.green('Passing') : chalk.red('Failed')
-        console.log(`D${diff.id}: ${diff.statusName} (${diff.status}) | ${buildStatus}`);
+        const activePhid= diff.activeDiffPHID;
+
+
+        const buildableStatus = await getCurrentBuildInfo(activePhid);
+        const isPassing = buildableStatus === BUILDABLE_STATUSES.passed.id;
+
+
+        console.log(`D${diff.id}: ${diff.statusName} (${diff.status}) | ${BUILDABLE_STATUSES[buildableStatus].display}`);
+
         if (diff.status === STATUSES.ACCEPTED && isPassing) {
             console.log('Landing');
             clearInterval(phabLoop)
