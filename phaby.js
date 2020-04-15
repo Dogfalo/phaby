@@ -37,14 +37,13 @@ let i = 0;
 let numAttempts = 0;
 const FRAMES = ['-', '\\', '|', '/'];
 
-let phabLoop;
 function main() {
     setInterval(() => {
         const frame = FRAMES[i = ++ i % FRAMES.length];
         displayCurrentDiffState(frame)
     }, 80);
     checkAndLand()
-    phabLoop = setInterval(() => {
+    setInterval(() => {
         checkAndLand()
     }, 10000);
 }
@@ -67,9 +66,7 @@ function displayCurrentDiffState(frame) {
 }
 
 async function checkAndLand() {
-
     const diffStatusPromise = exec(`echo '{"ids": [${program.diff}]}' | arc call-conduit differential.query`)
-
 
     try {
         const diffStatus = await diffStatusPromise;
@@ -87,7 +84,6 @@ async function checkAndLand() {
 
         if (diff.status === STATUSES.ACCEPTED && isPassing) {
             console.log('Landing');
-            clearInterval(phabLoop)
             let arcLandPromise = exec(`arc land --revision ${program.diff}`)
             let arcLandRes = await arcLandPromise;
             console.log(arcLandRes.stdout);
@@ -98,9 +94,9 @@ async function checkAndLand() {
             process.exit(0)
         } else if (diff.status === STATUSES.CLOSED) {
             console.log('Nothing to be done')
-            clearInterval(phabLoop)
             process.exit(0)
         }
+
     } catch (error) {
         if (error) {
             console.log(`error: ${error.message}`);
