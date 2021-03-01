@@ -17,7 +17,7 @@
     "commander": "^5.0.0",
     "esm": "^3.2.25",
     "log-update": "^4.0.0",
-    "node-notifier": "^7.0.0",
+    "node-notifier": "^8.0.1",
     "update-notifier": "^4.1.0"
   }
 }
