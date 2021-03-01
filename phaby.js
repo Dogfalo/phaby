@@ -49,7 +49,7 @@ function main() {
 }
 
 async function getCurrentBuildInfo(activePhid) {
-    const buildable = await exec(`echo '{ "constraints": { "objectPHIDs": ["${activePhid}"] } }' | arc call-conduit harbormaster.buildable.search`);
+    const buildable = await exec(`echo '{ "constraints": { "objectPHIDs": ["${activePhid}"] } }' | arc call-conduit -- harbormaster.buildable.search`);
     let res = JSON.parse(buildable.stdout)
     let buildableStatus = res.response.data[0].fields.buildableStatus.value;
     return buildableStatus;
