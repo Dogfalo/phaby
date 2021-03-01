@@ -66,7 +66,7 @@ function displayCurrentDiffState(frame) {
 }
 
 async function checkAndLand() {
-    const diffStatusPromise = exec(`echo '{"ids": [${program.diff}]}' | arc call-conduit differential.query`)
+    const diffStatusPromise = exec(`echo '{"ids": [${program.diff}]}' | arc call-conduit -- differential.query`)
 
     try {
         const diffStatus = await diffStatusPromise;
